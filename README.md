@@ -8,6 +8,7 @@ Native bash (bounded) last command correction, inspired by [thefuck](https://git
 - `fuck` looks through (the root level of) each directory found in `$PATH` and marks the executable with the minimum levenshtein distance from the believed typo of the last command as the best guess. The believed typo of the last command is found by running that command once more and taking `<COMMAND>` from the string `<COMMAND>: command not found`
 
 - `fuck` uses a variable named `$CHECK_LIMIT` which is currently hard-coded to bound the number of executable files it verifies against, but `fuck` will soon be modularized to accept a parameter for setting `$CHECK_LIMIT`
+
 --------------------------
 
 ## How to use it
