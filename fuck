@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Must be run with source!
+
+#TODO: replace "BEST" in last and execute before end of script
+
+ESTATUS=$?
+CHECK_LIMIT=10 #TODO: default to one or take first param 
+BOUND=0 #TODO: false if first param unset, true otherwise
+i=0
+
+if [ "$ESTATUS" -eq "0" ]; then
+	echo "Are you sure you made a typo? The exit status of your last command was 0"
+else
+	LAST=$(history | tail -2 | head -1 | cut -d " " -f 3- | sed "s/^[ \t]*//")
+	FOUND_STATUS=$($LAST 2>&1 | tail -1 | cut -d ":" -f 2 | sed "s/^[ \t]*//")
+	if [[ $FOUND_STATUS == *"command not found"* ]]; then
+		
+		TYPO=$($LAST 2>&1 | tail -1 | cut -d ":" -f 1)
+		INT_LIMIT=9223372036854775807 # Numbers wrap over above this number
+
+		min=$INT_LIMIT
+		BEST=''
+		CURRENT=''
+
+		for loc in $(echo "$PATH" | tr ":" " ")
+		do
+			if [ $BOUND ] && ([[ "$i" -eq "$CHECK_LIMIT" ]] || [[ "$i" -gt "$CHECK_LIMIT" ]] || [[ "$CURRENT" -eq "1" ]]); then
+				break
+			fi
+
+			for f in $(ls "$loc")
+			do 
+				# Check that an 'x' exists in the file's permissions 
+				if [[ $(ls -l "$loc/$f" | cut -d " " -f 1) == *"x"* ]]; then
+					i=$(echo "$i+1" | bc -l) # Increment number of checked executables
+					CURRENT=$(./distance.sh "$f" "$TYPO")
+					#echo $CURRENT
+					[[ "$CURRENT" -eq "1" ]] && BEST="$f" && break # Not going to have closer value than this
+					[[ "$CURRENT" -lt "$min" ]] && min=$CURRENT && BEST="$f"
+					
+					if [ $BOUND ] && ([[ "$i" -eq "$CHECK_LIMIT" ]] || [[ "$i" -gt "$CHECK_LIMIT" ]]); then
+						break
+					fi
+				fi
+			done
+		done
+		echo "Last command: $LAST"
+		echo "Typo: $TYPO"
+		echo "Best replacement found: $BEST"
+		echo "${LAST/$TYPO/$BEST}"
+	else
+		echo Your exit status '('$ESTATUS')' was not caused by a typo
+	fi	
+fi
